@@ -62,7 +62,7 @@ public class ExternalLink extends RegistryObject implements Serializable {
 
     @Basic(optional = false)
     @Column(name = "externalURI")
-    @Index(name="xds_externalURI_idx")
+    @Index(name="externalURI_idx")
     private String externalURI;
     
 }
