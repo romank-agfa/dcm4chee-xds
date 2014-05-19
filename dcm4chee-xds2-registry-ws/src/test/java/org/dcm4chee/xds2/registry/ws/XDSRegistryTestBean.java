@@ -54,13 +54,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.xml.bind.JAXBException;
 
 import org.dcm4chee.xds2.common.XDSConstants;
 import org.dcm4chee.xds2.common.exception.XDSException;
 import org.dcm4chee.xds2.infoset.rim.AssociationType1;
 import org.dcm4chee.xds2.infoset.rim.ClassificationType;
-import org.dcm4chee.xds2.infoset.rim.ExternalIdentifierType;
 import org.dcm4chee.xds2.infoset.rim.ExtrinsicObjectType;
 import org.dcm4chee.xds2.infoset.rim.InternationalStringType;
 import org.dcm4chee.xds2.infoset.rim.LocalizedStringType;
@@ -70,8 +68,6 @@ import org.dcm4chee.xds2.infoset.rim.SlotType1;
 import org.dcm4chee.xds2.infoset.rim.SubmitObjectsRequest;
 import org.dcm4chee.xds2.infoset.ws.registry.DocumentRegistryPortType;
 import org.dcm4chee.xds2.persistence.Association;
-import org.dcm4chee.xds2.persistence.Classification;
-import org.dcm4chee.xds2.persistence.ExternalIdentifier;
 import org.dcm4chee.xds2.persistence.Identifiable;
 import org.dcm4chee.xds2.persistence.InternationalString;
 import org.dcm4chee.xds2.persistence.QRegistryObject;
@@ -200,9 +196,9 @@ public class XDSRegistryTestBean implements XDSRegistryTestBeanI {
     @Override
     public void checkClassification(ClassificationType obj) throws XDSRegistryTestBeanException {
         try {
-            Classification cl = (Classification) getRegistryObjectByUUID(obj.getId());
+            /* TODO: DB_RESTRUCT Classification cl = (Classification) getRegistryObjectByUUID(obj.getId());
             assertNotNull("Classification not found! :"+obj.getId(), cl);
-            checkClassification(obj, cl);
+            checkClassification(obj, cl); */
         } catch (AssertionError error) {
             throw new XDSRegistryTestBeanException(error);
         }
@@ -334,7 +330,7 @@ public class XDSRegistryTestBean implements XDSRegistryTestBeanI {
     
 // Helper for compare RegistryObjects of jaxb and persistence objects    
 
-    private void checkClassification(ClassificationType obj, Classification cl) throws XDSRegistryTestBeanException {
+    /* TODO: DB_RESTRUCT private void checkClassification(ClassificationType obj, Classification cl) throws XDSRegistryTestBeanException {
         try {
             String msgPrefix = "Classification "+obj.getId();
             if (cl.getClassificationNode() == null)
@@ -352,9 +348,9 @@ public class XDSRegistryTestBean implements XDSRegistryTestBeanI {
         } catch (AssertionError error) {
             throw new XDSRegistryTestBeanException(error);
         }
-    }
+    }*/
 
-    private void checkClassificationList(String msgPrefix,
+    /* TODO: DB_RESTRUCT private void checkClassificationList(String msgPrefix,
             List<ClassificationType> cltList, Set<Classification> clList)
             throws XDSRegistryTestBeanException {
         assertEquals(msgPrefix+" Number of Classifications:", cltList.size(), clList.size());
@@ -372,8 +368,8 @@ public class XDSRegistryTestBean implements XDSRegistryTestBeanI {
                         assertEquals("ClassifiedObject:", clt.getClassifiedObject(), cl.getClassifiedObject().getId());
                         assertEquals("ObjectType:", clt.getObjectType(), cl.getObjectType());
                         checkSlots(clt.getSlot(), cl.getSlots(), "");
-                        /* TODO: checkInternationalString(clt.getName(), cl.getName(), ": Name");
-                        checkInternationalString(clt.getDescription(), cl.getDescription(), ": Description");*/
+                        checkInternationalString(clt.getName(), cl.getName(), ": Name");
+                        checkInternationalString(clt.getDescription(), cl.getDescription(), ": Description");
                         continue cltList;
                     } catch (AssertionError e) {
                         sb.append(" ").append(e.getMessage());
@@ -386,7 +382,7 @@ public class XDSRegistryTestBean implements XDSRegistryTestBeanI {
             } 
             fail(msgPrefix+" Missing Classification with "+postfix);
         }
-    }
+    } 
 
     private void checkExternalIdentifier(List<ExternalIdentifierType> externalIdentifier,
             Set<ExternalIdentifier> externalIdentifiers, String msgPrefix) throws XDSRegistryTestBeanException {
@@ -398,17 +394,17 @@ public class XDSRegistryTestBean implements XDSRegistryTestBeanI {
                     assertEquals(msgPrefix+": ExternalIdentifier Value:", eiType.getValue(), ei.getValue());
                     assertEquals(msgPrefix+": ExternalIdentifier registryObject:", eiType.getRegistryObject(), ei.getRegistryObject().getId());
                     checkSlots(eiType.getSlot(), ei.getSlots(), msgPrefix);
-                    /*TODO: checkClassificationList(msgPrefix, eiType.getClassification(), ei.getClassifications());
+                    checkClassificationList(msgPrefix, eiType.getClassification(), ei.getClassifications());
                     checkInternationalString(eiType.getName(), ei.getName(), msgPrefix+": Name");
                     checkInternationalString(eiType.getDescription(), ei.getDescription(), msgPrefix+": Description");
-                    checkExternalIdentifier(eiType.getExternalIdentifier(), ei.getExternalIdentifiers(), msgPrefix);*/
+                    checkExternalIdentifier(eiType.getExternalIdentifier(), ei.getExternalIdentifiers(), msgPrefix);
                     continue loop;
                 }
             }
             fail(msgPrefix+" Missing ExternalIdentifier! IdentificationScheme:"+idScheme);
         }
         
-    }
+    }*/
 
     private void checkSlots(List<SlotType1> slotTypes, List<Slot> slots, String msgPrefix) {
         if (slotTypes == null && slots == null) {

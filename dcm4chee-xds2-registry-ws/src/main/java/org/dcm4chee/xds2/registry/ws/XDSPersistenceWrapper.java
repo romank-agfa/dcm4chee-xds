@@ -40,13 +40,10 @@ package org.dcm4chee.xds2.registry.ws;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import javax.xml.bind.JAXBElement;
@@ -61,8 +58,6 @@ import org.dcm4chee.xds2.infoset.rim.ClassificationType;
 import org.dcm4chee.xds2.infoset.rim.ExternalIdentifierType;
 import org.dcm4chee.xds2.infoset.rim.ExtrinsicObjectType;
 import org.dcm4chee.xds2.infoset.rim.IdentifiableType;
-import org.dcm4chee.xds2.infoset.rim.InternationalStringType;
-import org.dcm4chee.xds2.infoset.rim.LocalizedStringType;
 import org.dcm4chee.xds2.infoset.rim.ObjectFactory;
 import org.dcm4chee.xds2.infoset.rim.ObjectRefType;
 import org.dcm4chee.xds2.infoset.rim.RegistryObjectListType;
@@ -71,23 +66,17 @@ import org.dcm4chee.xds2.infoset.rim.RegistryPackageType;
 import org.dcm4chee.xds2.infoset.rim.SlotType1;
 import org.dcm4chee.xds2.infoset.rim.VersionInfoType;
 import org.dcm4chee.xds2.persistence.Association;
-import org.dcm4chee.xds2.persistence.Classification;
 import org.dcm4chee.xds2.persistence.ClassificationNode;
 import org.dcm4chee.xds2.persistence.ClassificationScheme;
-import org.dcm4chee.xds2.persistence.Description;
-import org.dcm4chee.xds2.persistence.ExternalIdentifier;
 import org.dcm4chee.xds2.persistence.ExtrinsicObject;
 import org.dcm4chee.xds2.persistence.Identifiable;
-import org.dcm4chee.xds2.persistence.Name;
 import org.dcm4chee.xds2.persistence.ObjectRef;
 import org.dcm4chee.xds2.persistence.RegistryObject;
 import org.dcm4chee.xds2.persistence.RegistryPackage;
 import org.dcm4chee.xds2.persistence.Slot;
 import org.dcm4chee.xds2.persistence.XADPatient;
-import org.dcm4chee.xds2.persistence.XDSCode;
 import org.dcm4chee.xds2.persistence.XDSDocumentEntry;
 import org.dcm4chee.xds2.persistence.XDSFolder;
-import org.dcm4chee.xds2.persistence.XDSObject;
 import org.dcm4chee.xds2.persistence.XDSSubmissionSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -326,8 +315,8 @@ public class XDSPersistenceWrapper {
                     objList.add(toJAXBRegistryPackage((RegistryPackage)obj));
                 } else if (obj instanceof Association) {
                     objList.add(toJAXBAssociation((Association)obj));
-                } else if (obj instanceof Classification) {
-                    objList.add(toJAXBClassification((Classification)obj));
+               /* } else if (obj instanceof Classification) {
+                    objList.add(toJAXBClassification((Classification)obj));*/
                 } else {
                     log.error("Unknown RegistryObject! id:"+obj.getId());
                 }
@@ -522,10 +511,10 @@ public class XDSPersistenceWrapper {
         }
         return factory.createAssociation(assocType);
     }
-    private JAXBElement<? extends IdentifiableType> toJAXBClassification(
+ /*   private JAXBElement<? extends IdentifiableType> toJAXBClassification(
             Classification obj) {
         return factory.createClassification(toClassificationType(obj));
-    }
+    }*/
     
     private JAXBElement<? extends IdentifiableType> toJAXBObjectRef(Identifiable i) {
         ObjectRefType objRef = factory.createObjectRefType();
@@ -568,7 +557,7 @@ public class XDSPersistenceWrapper {
         log.debug("\n#### finnished toEbXmlObj");
     }
 
-    private void copyNameType(Set<Name> name, RegistryObjectType roType) {
+    /*private void copyNameType(Set<Name> name, RegistryObjectType roType) {
         InternationalStringType is = factory.createInternationalStringType();
         List<LocalizedStringType> values = is.getLocalizedString();
         LocalizedStringType value;
@@ -652,7 +641,7 @@ public class XDSPersistenceWrapper {
                 eiTypes.add(eiType);
             }
         }
-    }
+    } */
 
     private void copySlotType(List<Slot> slots, RegistryObjectType roType) {
         if (slots != null) {
