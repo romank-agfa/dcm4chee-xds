@@ -199,7 +199,7 @@ public class XDSPersistenceWrapper {
         return assoc;
     }
     
-    public Classification toClassification(ClassificationType clType) throws XDSException {
+    /*public Classification toClassification(ClassificationType clType) throws XDSException {
         Classification cl = new Classification();
         toPersistenceObj(clType, cl);
         cl.setNodeRepresentation(clType.getNodeRepresentation());
@@ -243,7 +243,7 @@ public class XDSPersistenceWrapper {
         }
 
         return cl;
-    }
+    }*/
 
     public ClassificationScheme toClassificationScheme(ClassificationSchemeType schemeType, List<Identifiable> objects) throws XDSException {
         ClassificationScheme scheme = new ClassificationScheme();
@@ -276,16 +276,18 @@ public class XDSPersistenceWrapper {
 
     public void toPersistenceObj(RegistryObjectType roType, RegistryObject ro) throws XDSException {
         toPersistenceIdentifiable(roType, ro);
-        ro.setClassifications(new HashSet<Classification>());
-        ro.setDescription(new HashSet<Description>());
-        ro.setExternalIdentifiers(new HashSet<ExternalIdentifier>());
+        
+        ro.setClassifications(roType.getClassification());
+        ro.setDescription(roType.getDescription());
+        ro.setExternalIdentifiers(roType.getExternalIdentifier());
+        
         ro.setLid(roType.getLid() == null ? ro.getId() : roType.getLid());//TODO if no LID, check if older RegistryObject exists and use this Lid!
         ro.setObjectType(roType.getObjectType());
         ro.setStatus("urn:oasis:names:tc:ebxml-regrep:StatusType:Approved");
-        copyName(roType.getName(), ro);
+        /*copyName(roType.getName(), ro);
         copyDescriptions(roType.getDescription(), ro);
         copyClassifications(roType.getClassification(), ro);
-        copyExternalIdentifier(roType.getExternalIdentifier(), ro);
+        copyExternalIdentifier(roType.getExternalIdentifier(), ro);*/
         //TODO VersionInfo
         ro.setVersionName("1.0");
         ro.setComment("Initial Version");
@@ -334,7 +336,7 @@ public class XDSPersistenceWrapper {
         return objListType;
     }
     
-    private void copyName(InternationalStringType isType, RegistryObject ro) {
+    /*private void copyName(InternationalStringType isType, RegistryObject ro) {
         Set<Name> names = new HashSet<Name>();
         if (isType != null) {
             Name name;
@@ -348,9 +350,9 @@ public class XDSPersistenceWrapper {
             }
         }
         ro.setName(names);
-    }
+    }-*/
 
-    private void copyDescriptions(InternationalStringType isType, RegistryObject ro) {
+    /*private void copyDescriptions(InternationalStringType isType, RegistryObject ro) {
         Set<Description> descriptions = new HashSet<Description>();
         if (isType != null) {
             Description desc;
@@ -365,9 +367,9 @@ public class XDSPersistenceWrapper {
             }
         }
         ro.setDescription(descriptions);
-    }
+    }*/
     
-    private void copyClassifications(List<ClassificationType> list, RegistryObject ro) throws XDSException {
+    /*private void copyClassifications(List<ClassificationType> list, RegistryObject ro) throws XDSException {
         if (list != null) {
             Set<Classification> clList = ro.getClassifications();
             Collection<XDSCode> xdsCodes = null;
@@ -389,7 +391,7 @@ public class XDSPersistenceWrapper {
                 }
             }
         }
-    }
+    }*/
 
     private void copyClassificationNodes(List<ClassificationNodeType> list, Identifiable parent, List<Identifiable> objects) throws XDSException {
         if (list != null) {
@@ -399,7 +401,7 @@ public class XDSPersistenceWrapper {
         }
     }
 
-    private void copyExternalIdentifier(List<ExternalIdentifierType> list, RegistryObject ro) throws XDSException {
+    /*private void copyExternalIdentifier(List<ExternalIdentifierType> list, RegistryObject ro) throws XDSException {
         if (list != null) {
             ExternalIdentifier ei;
             for (ExternalIdentifierType eiType : list) {
@@ -412,7 +414,7 @@ public class XDSPersistenceWrapper {
                 ro.getExternalIdentifiers().add(ei);
             }
         }
-    }
+    }*/
 
     private void copySlots(List<SlotType1> list, Identifiable ro) {
         List<Slot> slots = new ArrayList<Slot>();
@@ -540,14 +542,23 @@ public class XDSPersistenceWrapper {
         roType.setHome(ro.getHome());
         roType.setObjectType(ro.getObjectType());
         roType.setStatus(ro.getStatus());
-        log.debug("\n#### copyNameType");
-        copyNameType(ro.getName(), roType);
+
+        
+        /*log.debug("\n#### copyNameType");
+        //copyNameType(ro.getName(), roType);
         log.debug("\n#### copyDescriptionType");
-        copyDescriptionType(ro.getDescription(), roType);
+        //copyDescriptionType(ro.getDescription(), roType);
         log.debug("\n#### copyClassificationType");
-        copyClassificationType(ro.getClassifications(), roType);
+        //copyClassificationType(ro.getClassifications(), roType);
         log.debug("\n#### copyExternalIdentifierType");
-        copyExternalIdentifierType(ro.getExternalIdentifiers(), roType);
+        //copyExternalIdentifierType(ro.getExternalIdentifiers(), roType);
+        */
+        
+        roType.setName(ro.getName());
+        roType.setDescription(ro.getDescription());
+        roType.getClassification().addAll(ro.getClassifications());
+        roType.getExternalIdentifier().addAll(roType.getExternalIdentifier());
+        
         log.debug("\n#### copySlotType");
         copySlotType(ro.getSlots(), roType);
         VersionInfoType version = factory.createVersionInfoType();
@@ -612,6 +623,7 @@ public class XDSPersistenceWrapper {
             clType.setClassifiedObject(cl.getClassifiedObject().getId());
         } else {
             log.error("Missing ClassifiedObject! Classification id:"+cl.getId());
+            //TODO: move constant to configuration?
             clType.setClassifiedObject("urn:willi:987-abc-789");
         }
         return clType;
