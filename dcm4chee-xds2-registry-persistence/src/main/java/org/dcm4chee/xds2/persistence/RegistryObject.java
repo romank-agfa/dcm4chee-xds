@@ -261,7 +261,7 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
     @Lob
     @Access(AccessType.PROPERTY)
     public byte[] getXml() throws JAXBException {
-        log.debug("getXml called");
+        log.debug("getXml called (id {})", getId());
         if (fullObject == null) return null;
         
         Marshaller m = JAXBContext.newInstance(RegistryObjectType.class).createMarshaller();
@@ -273,7 +273,7 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
     }
     @SuppressWarnings("unchecked")
     public void setXml(byte[] xml) throws JAXBException {
-        log.debug("setXml called");
+        log.debug("setXml called (id {})", getId());
         Unmarshaller um = JAXBContext.newInstance(SubmitObjectsRequest.class).createUnmarshaller();
         ByteArrayInputStream is = new ByteArrayInputStream(xml);
         fullObject = ((JAXBElement<RegistryObjectType>) um.unmarshal(is)).getValue();
@@ -285,11 +285,12 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
      * @return
      */
     public RegistryObjectType getFullObject() {
+        log.debug("requested singleton  (id {})", getId());
 
         // singleton way 
         if (fullObject != null) return fullObject;
 
-        log.debug("no singleton RegistryObjectType, trying to fetch db");
+        log.debug("no singleton RegistryObjectType, trying to fetch db (id {})", getId());
 
         // if not created yet, try to fetch from db
         try {
@@ -300,7 +301,7 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
         
         if (fullObject != null) return fullObject;
 
-        log.debug("no blob from db, creating new RegistryObjectType");
+        log.debug("no blob from db, creating new RegistryObjectType (id {})", getId());
         
         // create new
         fullObject = (new ObjectFactory()).createRegistryObjectType();
