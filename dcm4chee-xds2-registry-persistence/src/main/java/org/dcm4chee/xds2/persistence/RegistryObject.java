@@ -42,8 +42,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -64,8 +62,8 @@ import org.dcm4chee.xds2.infoset.rim.ClassificationType;
 import org.dcm4chee.xds2.infoset.rim.ExternalIdentifierType;
 import org.dcm4chee.xds2.infoset.rim.InternationalStringType;
 import org.dcm4chee.xds2.infoset.rim.ObjectFactory;
+import org.dcm4chee.xds2.infoset.rim.RegistryObjectListType;
 import org.dcm4chee.xds2.infoset.rim.RegistryObjectType;
-import org.dcm4chee.xds2.infoset.rim.SubmitObjectsRequest;
 import org.dcm4chee.xds2.infoset.rim.VersionInfoType;
 import org.hibernate.annotations.Index;
 import org.slf4j.Logger;
@@ -82,9 +80,33 @@ import org.slf4j.LoggerFactory;
 @Entity
 @DiscriminatorValue("RegistryObject")
 public abstract class RegistryObject extends Identifiable implements Serializable {
-
     private static final long serialVersionUID = 513457139488147710L;
     private static Logger log = LoggerFactory.getLogger(RegistryObject.class);
+
+    // Un/marshallers are not thread-safe, but are expensive to create, so
+    // threadlocal it is
+
+    public static ThreadLocal<Marshaller> marshallerThreadLocal = new ThreadLocal<Marshaller>() {
+        @Override
+        protected Marshaller initialValue() {
+            try {
+                return JAXBContext.newInstance(RegistryObjectListType.class).createMarshaller();
+            } catch (JAXBException e) {
+                throw new RuntimeException("Unable to create Marshaller for RegistryObjectType", e);
+            }
+        }
+    };
+
+    public static ThreadLocal<Unmarshaller> unmarshallerThreadLocal = new ThreadLocal<Unmarshaller>() {
+        @Override
+        protected Unmarshaller initialValue() {
+            try {
+                return JAXBContext.newInstance(RegistryObjectListType.class).createUnmarshaller();
+            } catch (JAXBException e) {
+                throw new RuntimeException("Unable to create Unmarshaller for RegistryObjectType", e);
+            }
+        }
+    };
 
     /**
      * The blob singleton
@@ -279,16 +301,13 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
         log.debug("getXml called (id {})", getId());
         if (fullObject == null)
             return blobXml;
-        
-        
-        log.debug("Serializing fullObject in getXml (id {})", getId());
 
-        if (true) return blobXml;
+        log.debug("Marshalling fullObject in getXml (id {})", getId());
 
-        // if fullObject was initialized, we have to serialize it to persist any changes that were made
-        Marshaller m = JAXBContext.newInstance(RegistryObjectType.class).createMarshaller();
+        // if fullObject was initialized, we have to serialize it to persist any
+        // changes that were made
         ByteArrayOutputStream xmlStream = new ByteArrayOutputStream();
-        m.marshal((new ObjectFactory()).createRegistryObject(fullObject), xmlStream);
+        marshallerThreadLocal.get().marshal((new ObjectFactory()).createRegistryObject(fullObject), xmlStream);
         byte[] xml = xmlStream.toByteArray();
         return xml;
 
@@ -322,13 +341,15 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
             byte[] xml = getXml();
             if (xml != null) {
                 log.debug("Unmarshalling RegistryObjectType ... (id {})", getId());
-                Unmarshaller um = JAXBContext.newInstance(SubmitObjectsRequest.class).createUnmarshaller();
                 ByteArrayInputStream is = new ByteArrayInputStream(xml);
-                fullObject = ((JAXBElement<RegistryObjectType>) um.unmarshal(is)).getValue();
+                fullObject = ((JAXBElement<RegistryObjectType>) unmarshallerThreadLocal.get().unmarshal(is)).getValue();
                 return fullObject;
             }
         } catch (JAXBException e) {
-            log.warn("Error while marshalling a RegistryObjectType with id " + getId(), e);
+            // Exception is used since if there is an issue with unmarshalling,
+            // but the blob exists, then an empty fullobject is created and it
+            // will replace the blob - so data is lost
+            throw new RuntimeException("Error while unmarshalling a RegistryObjectType with id " + getId(), e);
         }
 
         log.debug("no blob from db, creating new RegistryObjectType (id {})", getId());
