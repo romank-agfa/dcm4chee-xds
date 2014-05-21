@@ -50,15 +50,17 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import org.dcm4chee.xds2.persistence.RegistryObject.XDSSearchIndex;
+import org.dcm4chee.xds2.persistence.RegistryObject.XDSSearchIndexKey;
 import org.hibernate.annotations.Index;
 
 
@@ -71,7 +73,7 @@ import org.hibernate.annotations.Index;
  */
 @Entity
 @Table(name="xds_searchTable")
-public class RegistryObjectKeyValueStore implements Serializable {
+public class RegistryObjectIndex implements Serializable {
 
 
     private static final long serialVersionUID = -2887627435710299659L;
@@ -81,14 +83,18 @@ public class RegistryObjectKeyValueStore implements Serializable {
     @Column(name = "pk")
     private long pk;
     
+    @Basic(optional = false)
     @ManyToOne
+    @JoinColumn(name = "registry_object_fk")    
     private RegistryObject subject;
 
     @Basic
+    @Column(name = "search_key")
     @Enumerated(EnumType.STRING)
-    private XDSSearchIndex key;
+    private XDSSearchIndexKey key;
     
     @Basic
+    @Column(name = "value")
     private String value;
     
     

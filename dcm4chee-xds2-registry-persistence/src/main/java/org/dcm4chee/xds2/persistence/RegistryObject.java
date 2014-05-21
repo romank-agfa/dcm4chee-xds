@@ -88,7 +88,7 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
      * @author Roman K
      *
      */
-    public static enum XDSSearchIndex {
+    public static enum XDSSearchIndexKey {
         
         DOCUMENTENTRY_UNIQUE_ID,
         
@@ -97,7 +97,7 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
     /**
      * This method should be overridden by subclasses to specify which elements should be indexed for them
      */
-    Map<XDSSearchIndex,String> getIndexedXPaths() {
+    Map<XDSSearchIndexKey,String> getIndexedPaths() {
         return null;
     }
     

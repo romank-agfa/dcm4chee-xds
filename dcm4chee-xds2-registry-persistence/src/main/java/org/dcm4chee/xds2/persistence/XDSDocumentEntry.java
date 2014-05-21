@@ -99,11 +99,11 @@ public class XDSDocumentEntry extends ExtrinsicObject implements XDSObject {
     
     
     @Override
-    Map<XDSSearchIndex, String> getIndexedXPaths() {
-        Map<XDSSearchIndex, String> indexes = new HashMap<XDSSearchIndex, String>();
-        indexes.put(RegistryObject.XDSSearchIndex.DOCUMENTENTRY_UNIQUE_ID, 
+    Map<XDSSearchIndexKey, String> getIndexedPaths() {
+        Map<XDSSearchIndexKey, String> indexes = new HashMap<XDSSearchIndexKey, String>();
+        indexes.put(RegistryObject.XDSSearchIndexKey.DOCUMENTENTRY_UNIQUE_ID, 
                 "lcm:SubmitObjectsRequest/rim:RegistryObjectList/rim:ExtrinsicObject/rim:ExternalIdentifier[@identificationScheme='urn:uuid:2e82c1f6-a085-4c72-9da3-8640a32e42ab']/@value");
-        Map<XDSSearchIndex, String> parentIndexes = super.getIndexedXPaths();
+        Map<XDSSearchIndexKey, String> parentIndexes = super.getIndexedPaths();
         if (parentIndexes != null) indexes.putAll(parentIndexes);
         return indexes;
     }
