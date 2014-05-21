@@ -40,7 +40,9 @@ package org.dcm4chee.xds2.persistence;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -94,6 +96,17 @@ public class XDSDocumentEntry extends ExtrinsicObject implements XDSObject {
     public static final String FIND_BY_UUIDS_NAME = "uuids";
     
     private static Logger log = LoggerFactory.getLogger(XDSDocumentEntry.class);
+    
+    
+    @Override
+    Map<XDSSearchIndex, String> getIndexedXPaths() {
+        Map<XDSSearchIndex, String> indexes = new HashMap<XDSSearchIndex, String>();
+        indexes.put(RegistryObject.XDSSearchIndex.DOCUMENTENTRY_UNIQUE_ID, 
+                "lcm:SubmitObjectsRequest/rim:RegistryObjectList/rim:ExtrinsicObject/rim:ExternalIdentifier[@identificationScheme='urn:uuid:2e82c1f6-a085-4c72-9da3-8640a32e42ab']/@value");
+        Map<XDSSearchIndex, String> parentIndexes = super.getIndexedXPaths();
+        if (parentIndexes != null) indexes.putAll(parentIndexes);
+        return indexes;
+    }
     
     @Basic(optional = false)
     @Column(name = "unique_id")

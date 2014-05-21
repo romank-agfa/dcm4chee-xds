@@ -42,6 +42,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Map;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -82,7 +83,28 @@ import org.slf4j.LoggerFactory;
 public abstract class RegistryObject extends Identifiable implements Serializable {
     private static final long serialVersionUID = 513457139488147710L;
     private static Logger log = LoggerFactory.getLogger(RegistryObject.class);
-
+    /**
+     * Defined in a single location to prevent name clashes, and to use enum binding for a field in the searchtable
+     * @author Roman K
+     *
+     */
+    public static enum XDSSearchIndex {
+        
+        DOCUMENTENTRY_UNIQUE_ID,
+        
+    }
+    
+    /**
+     * This method should be overridden by subclasses to specify which elements should be indexed for them
+     */
+    Map<XDSSearchIndex,String> getIndexedXPaths() {
+        return null;
+    }
+    
+    
+/* select value for doc uniq id
+ * lcm:SubmitObjectsRequest/rim:RegistryObjectList/rim:ExtrinsicObject/rim:ExternalIdentifier[@identificationScheme='urn:uuid:2e82c1f6-a085-4c72-9da3-8640a32e42ab']/@value
+ */
     // Un/marshallers are not thread-safe, but are expensive to create, so
     // threadlocal it is
 
@@ -309,6 +331,11 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
         ByteArrayOutputStream xmlStream = new ByteArrayOutputStream();
         marshallerThreadLocal.get().marshal((new ObjectFactory()).createRegistryObject(fullObject), xmlStream);
         byte[] xml = xmlStream.toByteArray();
+
+        // validate/update searchIndex table
+        
+        
+        
         return xml;
 
     }
