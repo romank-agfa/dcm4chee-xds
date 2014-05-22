@@ -41,17 +41,25 @@ package org.dcm4chee.xds2.persistence;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Lob;
+import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -59,6 +67,8 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.commons.jxpath.JXPathContext;
+import org.dcm4chee.xds2.common.XDSConstants;
 import org.dcm4chee.xds2.infoset.rim.ClassificationType;
 import org.dcm4chee.xds2.infoset.rim.ExternalIdentifierType;
 import org.dcm4chee.xds2.infoset.rim.InternationalStringType;
@@ -83,28 +93,46 @@ import org.slf4j.LoggerFactory;
 public abstract class RegistryObject extends Identifiable implements Serializable {
     private static final long serialVersionUID = 513457139488147710L;
     private static Logger log = LoggerFactory.getLogger(RegistryObject.class);
+    private static final Map<XDSSearchIndexKey,String> INDEX_XPATHS;
+    private static final boolean FORCE_REINDEX = true;
+    
     /**
+     * Searchtable keys for which index can be enabled.<br/>
      * Defined in a single location to prevent name clashes, and to use enum binding for a field in the searchtable
      * @author Roman K
      *
      */
     public static enum XDSSearchIndexKey {
         
-        DOCUMENTENTRY_UNIQUE_ID,
+        DOCUMENT_ENTRY_UNIQUE_ID,
+        DOCUMENT_ENTRY_AUTHOR,
+        SUBMISSION_SET_AUTHOR,
         
+    }
+    static {
+        INDEX_XPATHS = new HashMap<RegistryObject.XDSSearchIndexKey, String>();
+
+        // Document Entry's Unique ID
+        INDEX_XPATHS.put(XDSSearchIndexKey.DOCUMENT_ENTRY_UNIQUE_ID,
+                String.format("externalIdentifier[identificationScheme='%s']/value", XDSConstants.UUID_XDSDocumentEntry_uniqueId));
+
+        // Document Entry's Author
+        INDEX_XPATHS.put(XDSSearchIndexKey.DOCUMENT_ENTRY_AUTHOR,
+                String.format("classification[classificationScheme='%s']/slot[name='%s']/valueList/value" ,XDSConstants.UUID_XDSDocumentEntry_author, XDSConstants.SLOT_NAME_AUTHOR_PERSON));
+        
+        // Submission Set's Author
+        INDEX_XPATHS.put(XDSSearchIndexKey.SUBMISSION_SET_AUTHOR,
+                String.format("classification[classificationScheme='%s']/slot[name='%s']/valueList/value" ,XDSConstants.UUID_XDSSubmissionSet_autor, XDSConstants.SLOT_NAME_AUTHOR_PERSON));
     }
     
     /**
-     * This method should be overridden by subclasses to specify which elements should be indexed for them
+     * This method should be overridden by subclasses to specify which indexes are used for them
      */
-    Map<XDSSearchIndexKey,String> getIndexedPaths() {
+    Collection<XDSSearchIndexKey> getIndexes() {
         return null;
     }
     
     
-/* select value for doc uniq id
- * lcm:SubmitObjectsRequest/rim:RegistryObjectList/rim:ExtrinsicObject/rim:ExternalIdentifier[@identificationScheme='urn:uuid:2e82c1f6-a085-4c72-9da3-8640a32e42ab']/@value
- */
     // Un/marshallers are not thread-safe, but are expensive to create, so
     // threadlocal it is
 
@@ -130,11 +158,8 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
         }
     };
 
-    /**
-     * The blob singleton
-     */
     @Transient
-    private RegistryObjectType fullObject;
+    private byte[] blobXml;
 
     @Basic(optional = false)
     @Column(name = "lid")
@@ -157,8 +182,92 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
     @Basic(optional = true)
     @Column(name = "comment1")
     private String comment;
+    
+    @Transient
+    private Set<RegistryObjectIndex> indexedValues;
 
-    // TODO:DB_RESTRUCT override other setters to save into blob!
+    /**
+     * The deserialized blob singleton  
+     */
+    @Transient
+    private RegistryObjectType fullObject;
+    /**
+     * The blob 
+     */
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "xmlBlob")
+    @Access(AccessType.PROPERTY)
+    public byte[] getXml() throws JAXBException {
+        log.debug("getXml called (id {})", getId());
+
+        // if fullObject was not used - no need to serialize it
+        if (fullObject == null)
+            return blobXml;
+    
+        // if fullObject was initialized, we have to serialize it to persist any
+        // changes that could have been made
+        log.debug("Marshalling fullObject in getXml (id {})", getId());
+        ByteArrayOutputStream xmlStream = new ByteArrayOutputStream();
+        marshallerThreadLocal.get().marshal((new ObjectFactory()).createRegistryObject(fullObject), xmlStream);
+        byte[] xml = xmlStream.toByteArray();
+    
+        return xml;
+    }
+
+    public void setXml(byte[] xml) throws JAXBException {
+        log.debug("setXml called (id {})", getId());
+        blobXml = xml;
+    }
+
+    @Basic
+    @OneToMany(mappedBy="subject", cascade=CascadeType.ALL)
+    @Access(AccessType.PROPERTY)
+    @SuppressWarnings("unchecked")
+    public Set<RegistryObjectIndex> getIndexedValues() {
+
+        // TODO: OPTIMIZATION - if marshalling is fast - can check whether the object has already changed first
+        
+        // if fullObject was not initialized - nothing has changed and we could just return old value 
+        // (except if reindexing is forced)
+        if (fullObject == null && !FORCE_REINDEX) return indexedValues;
+        
+        
+        Set<RegistryObjectIndex> newIndexValues = new HashSet<RegistryObjectIndex>();
+        
+        
+        // validate/update searchIndex table
+        // iterate over all enabled indexes
+        for (XDSSearchIndexKey key : getIndexes()) {
+            // run xpath expr on fullobject
+            JXPathContext context = JXPathContext.newContext(getFullObject());
+            Iterator<String> valueIterator = (Iterator<String>) context.iterate(INDEX_XPATHS.get(key));
+            
+            // add to newIndexValues
+            while (valueIterator.hasNext()) {
+                RegistryObjectIndex ind = new RegistryObjectIndex();
+                ind.setSubject(this);
+                ind.setKey(key);
+                ind.setValue((String) valueIterator.next());
+                newIndexValues.add(ind);
+            }
+            
+        }
+        
+        // try to retain what we have there already, and add new ones
+        indexedValues.retainAll(newIndexValues);
+        indexedValues.addAll(newIndexValues);
+        
+        return indexedValues;
+    }
+    
+    public void setIndexedValues(Set<RegistryObjectIndex> indexedValues) {
+        
+        this.indexedValues = indexedValues;
+    }
+    
+    // TODO:DB_RESTRUCT override super and sub setters to save into blob!
 
     /* These getters/setter pull the data from the blob singleton */
 
@@ -313,39 +422,7 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
         getVersionInfo().setComment(comment);
     }
 
-    private byte[] blobXml;
-
-    @Lob
-    @Basic(fetch = FetchType.LAZY)
-    @Column(name = "xmlBlob")
-    @Access(AccessType.PROPERTY)
-    public byte[] getXml() throws JAXBException {
-        log.debug("getXml called (id {})", getId());
-        if (fullObject == null)
-            return blobXml;
-
-        log.debug("Marshalling fullObject in getXml (id {})", getId());
-
-        // if fullObject was initialized, we have to serialize it to persist any
-        // changes that were made
-        ByteArrayOutputStream xmlStream = new ByteArrayOutputStream();
-        marshallerThreadLocal.get().marshal((new ObjectFactory()).createRegistryObject(fullObject), xmlStream);
-        byte[] xml = xmlStream.toByteArray();
-
-        // validate/update searchIndex table
-        
-        
-        
-        return xml;
-
-    }
-
-    @SuppressWarnings("unchecked")
-    public void setXml(byte[] xml) throws JAXBException {
-        log.debug("setXml called (id {})", getId());
-        blobXml = xml;
-    }
-
+    
     /**
      * Will lazily fetch the blob from the DB, in not done already. If the
      * returned object is changed, the changes will be persisted in case the

@@ -83,7 +83,6 @@ public class RegistryObjectIndex implements Serializable {
     @Column(name = "pk")
     private long pk;
     
-    @Basic(optional = false)
     @ManyToOne
     @JoinColumn(name = "registry_object_fk")    
     private RegistryObject subject;
@@ -96,6 +95,52 @@ public class RegistryObjectIndex implements Serializable {
     @Basic
     @Column(name = "value")
     private String value;
+
+    public long getPk() {
+        return pk;
+    }
+
+    public void setPk(long pk) {
+        this.pk = pk;
+    }
+
+    public RegistryObject getSubject() {
+        return subject;
+    }
+
+    public void setSubject(RegistryObject subject) {
+        this.subject = subject;
+    }
+
+    public XDSSearchIndexKey getKey() {
+        return key;
+    }
+
+    public void setKey(XDSSearchIndexKey key) {
+        this.key = key;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+    
+    @Override
+    public boolean equals(Object x) {
+        
+        if (x == null) return false;
+        if (!x.getClass().equals(RegistryObjectIndex.class)) return false;
+
+        RegistryObjectIndex arg0 = (RegistryObjectIndex) x;
+        
+        // exclude pk from comparison
+        return (getKey().equals(arg0.getKey()) && 
+                getValue().equals(arg0.getValue()) && 
+                getSubject().equals(arg0.getSubject()));
+    }
     
     
 }
