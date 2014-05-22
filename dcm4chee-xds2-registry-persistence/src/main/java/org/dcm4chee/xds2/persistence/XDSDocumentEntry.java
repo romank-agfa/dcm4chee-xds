@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -96,16 +97,13 @@ public class XDSDocumentEntry extends ExtrinsicObject implements XDSObject {
     public static final String FIND_BY_UUIDS_NAME = "uuids";
     
     private static Logger log = LoggerFactory.getLogger(XDSDocumentEntry.class);
-    
+
+    private static final XDSSearchIndexKey[] THIS_INDEXES = { XDSSearchIndexKey.DOCUMENT_ENTRY_UNIQUE_ID,
+        XDSSearchIndexKey.DOCUMENT_ENTRY_AUTHOR };
     
     @Override
-    Map<XDSSearchIndexKey, String> getIndexes() {
-        Map<XDSSearchIndexKey, String> indexes = new HashMap<XDSSearchIndexKey, String>();
-        indexes.put(RegistryObject.XDSSearchIndexKey.DOCUMENT_ENTRY_UNIQUE_ID, 
-                "lcm:SubmitObjectsRequest/rim:RegistryObjectList/rim:ExtrinsicObject/rim:ExternalIdentifier[@identificationScheme='urn:uuid:2e82c1f6-a085-4c72-9da3-8640a32e42ab']/@value");
-        Map<XDSSearchIndexKey, String> parentIndexes = super.getIndexes();
-        if (parentIndexes != null) indexes.putAll(parentIndexes);
-        return indexes;
+    XDSSearchIndexKey[] getIndexes() {
+        return THIS_INDEXES;
     }
     
     @Basic(optional = false)

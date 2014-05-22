@@ -128,7 +128,7 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
     /**
      * This method should be overridden by subclasses to specify which indexes are used for them
      */
-    Collection<XDSSearchIndexKey> getIndexes() {
+    XDSSearchIndexKey[] getIndexes() {
         return null;
     }
     
@@ -233,12 +233,11 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
         // (except if reindexing is forced)
         if (fullObject == null && !FORCE_REINDEX) return indexedValues;
         
-        
-        Set<RegistryObjectIndex> newIndexValues = new HashSet<RegistryObjectIndex>();
-        
+        if (getIndexes() == null) return indexedValues;
         
         // validate/update searchIndex table
         // iterate over all enabled indexes
+        Set<RegistryObjectIndex> newIndexValues = new HashSet<RegistryObjectIndex>();
         for (XDSSearchIndexKey key : getIndexes()) {
             // run xpath expr on fullobject
             JXPathContext context = JXPathContext.newContext(getFullObject());
@@ -255,8 +254,14 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
             
         }
         
+        log.info("newIndexedValues count {}", newIndexValues.size());
+        
+        // if no setter were used
+        if (indexedValues == null) return newIndexValues;
+        
         // try to retain what we have there already, and add new ones
-        indexedValues.retainAll(newIndexValues);
+        //indexedValues.retainAll(newIndexValues); - not working
+        indexedValues.clear();
         indexedValues.addAll(newIndexValues);
         
         return indexedValues;
