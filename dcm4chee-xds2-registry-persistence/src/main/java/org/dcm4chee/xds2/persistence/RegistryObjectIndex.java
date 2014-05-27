@@ -142,5 +142,14 @@ public class RegistryObjectIndex implements Serializable {
                 getSubject().equals(arg0.getSubject()));
     }
     
+    @Override
+    public String toString() {
+        return String.format("RegObjIndex - subj:%s | pk: %s | key:%s | value:%s", getSubject().getId(),getPk(), getKey(), getValue());
+    }
+    
+    @Override
+    public int hashCode() {
+        return getSubject().hashCode()+getValue().hashCode()*10+getKey().ordinal();
+    }
     
 }

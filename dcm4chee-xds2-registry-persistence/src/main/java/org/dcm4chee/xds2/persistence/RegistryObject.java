@@ -76,6 +76,7 @@ import org.dcm4chee.xds2.infoset.rim.ObjectFactory;
 import org.dcm4chee.xds2.infoset.rim.RegistryObjectListType;
 import org.dcm4chee.xds2.infoset.rim.RegistryObjectType;
 import org.dcm4chee.xds2.infoset.rim.VersionInfoType;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Index;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -184,7 +185,7 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
     private String comment;
     
     @Transient
-    private Set<RegistryObjectIndex> indexedValues;
+    private Set<RegistryObjectIndex> indexedValues = new HashSet<RegistryObjectIndex>();
 
     /**
      * The deserialized blob singleton  
@@ -223,9 +224,11 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
 
     @Basic
     @OneToMany(mappedBy="subject", cascade=CascadeType.ALL)
+    @Cascade( value = {org.hibernate.annotations.CascadeType.DELETE_ORPHAN})
     @Access(AccessType.PROPERTY)
     @SuppressWarnings("unchecked")
     public Set<RegistryObjectIndex> getIndexedValues() {
+        log.debug("getIndexedValues called for object with id {}", getId());
 
         // TODO: OPTIMIZATION - if marshalling is fast - can check whether the object has already changed first
         
@@ -254,17 +257,41 @@ public abstract class RegistryObject extends Identifiable implements Serializabl
             
         }
         
-        log.info("newIndexedValues count {}", newIndexValues.size());
+        log.debug("NewIndexedVals before merging");
+        logIndexedVals(newIndexValues);
+
         
         // if no setter were used
-        if (indexedValues == null) return newIndexValues;
+        //if (indexedValues == null) return newIndexValues;
+
+        log.debug("OldIndexedVals before merging");
+        logIndexedVals(indexedValues);
         
+        for (RegistryObjectIndex i : newIndexValues ) {
+            log.debug("Old ivals contains new {} - {}", i, indexedValues.contains(i));
+            
+        }
         // try to retain what we have there already, and add new ones
-        //indexedValues.retainAll(newIndexValues); - not working
-        indexedValues.clear();
+        indexedValues.retainAll(newIndexValues); 
+        //indexedValues.clear();
         indexedValues.addAll(newIndexValues);
         
+        
+        log.debug("IndexedVals after merging");
+        logIndexedVals(indexedValues);
+        
+        
         return indexedValues;
+
+    
+    }
+
+    private void logIndexedVals(Set<RegistryObjectIndex> newIndexValues) {
+        log.debug("indexedValues count {}", newIndexValues.size());
+        String s = "";
+        for (RegistryObjectIndex roi : newIndexValues) 
+            s+= roi.toString()+"\n";
+        log.debug("indexedValues: \n {}",s);
     }
     
     public void setIndexedValues(Set<RegistryObjectIndex> indexedValues) {
