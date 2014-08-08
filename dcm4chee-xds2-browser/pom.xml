@@ -127,8 +127,14 @@
 			<artifactId>jboss-servlet-api_3.0_spec</artifactId>
 			<scope>provided</scope>
 		</dependency>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-cli</artifactId>
+            <version>7.2.0.Final</version>
+            <scope>provided</scope>
+        </dependency>
 
-	</dependencies>
+    </dependencies>
 	<build>
 		<plugins>
 			<plugin>
@@ -141,6 +147,13 @@
 							<filtering>true</filtering>
 						</resource>
 					</webResources>
+                    <archive>
+                        <manifestEntries>
+                            <Dependencies>
+                                org.dcm4che.conf.api,org.jboss.as.cli
+                            </Dependencies>
+                        </manifestEntries>
+                    </archive>
 				</configuration>
 			</plugin>
 		</plugins>

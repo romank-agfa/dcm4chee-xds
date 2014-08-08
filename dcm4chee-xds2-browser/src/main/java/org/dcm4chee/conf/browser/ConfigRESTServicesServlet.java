@@ -32,6 +32,10 @@ import org.dcm4chee.xds2.conf.XCAiRespondingGWCfg;
 import org.dcm4chee.xds2.conf.XdsRegistry;
 import org.dcm4chee.xds2.conf.XdsRepository;
 import org.dcm4chee.xds2.ctrl.ConfigObjectJSON;
+import org.jboss.as.cli.CliInitializationException;
+import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandContextFactory;
+import org.jboss.as.cli.CommandLineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -239,6 +243,36 @@ public class ConfigRESTServicesServlet {
 
 
     }
-    
+
+    @GET
+    @Path("/enable-extension/{extensionName}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void enableExtension(@PathParam(value = "extensionName") String extensionName) {
+
+        // Initialize the CLI context
+        final CommandContext ctx;
+        try {
+            ctx = CommandContextFactory.getInstance().newCommandContext();
+            ctx.connectController("localhost", 9999);
+            //ctx.handle("connect");
+        } catch(CliInitializationException e) {
+            throw new IllegalStateException("Failed to initialize CLI context", e);
+        } catch (CommandLineException e) {
+            throw new IllegalStateException("command line fail", e);
+        }
+
+        try {
+
+            // execute commands and operations
+            ctx.handle("deploy --name=dcm4chee-xds2-repository-ear-2.0.4-SNAPSHOT-psql-jdbcprefs.ear");
+        } catch (CommandLineException e) {
+            log.error("Jboss command line command failed",e);
+        } finally {
+            // terminate the session and
+            // close the connection to the controller
+            ctx.terminateSession();
+        }
+
+    }
 
 }
